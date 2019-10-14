@@ -1,6 +1,8 @@
-#if 0 // Change to 1 to enable this code (must enable ONE user*.cpp only!)
+#if 1 // Change to 1 to enable this code (must enable ONE user*.cpp only!)
 
 #include "globals.h"
+
+typedef void (*StepColorGradient)(uint16_t, uint16_t);
 
 static uint32_t lastTouchSample;
 static uint32_t lastBehaviorChange;
@@ -125,8 +127,6 @@ void stepVioletRedGradient(uint16_t ledPosition, uint16_t step) {
     arcada.pixels.setPixelColor(ledPosition, red, green, blue);
 }
 
-typedef void (*StepColorGradient)(uint16_t, uint16_t);
-
 static uint16_t rainbowWalkLEDSteps[] = {5, 6, 1, 4};
 const int N_RAINBOW_GRADIENTS = 7;
 // ROY G BIV
@@ -218,11 +218,13 @@ void advanceHalloweenGradients(void) {
     }
     currentStep = currentStep + direction;
 }
+
+static StepColorGradient currentHeartBeatGradient = &stepRedBlackGradient;
  
 void advanceHeartBeat(void) {
     int i;
     for(i = 0; i < arcada.pixels.numPixels(); i++) {
-        stepRedBlackGradient(i, heartbeat[currentHeartBeatStep]);
+        currentHeartBeatGradient(i, heartbeat[currentHeartBeatStep]);
     }
     arcada.pixels.show();
     
@@ -287,10 +289,15 @@ void user_loop(void) {
         break;
     }
 
-    if ((elapsedSince - lastBehaviorChange) > (SAMPLE_TIME * 1000)) {
+    if ((elapsedSince - lastBehaviorChange) > (SAMPLE_TIME * 500)) {
+      currentBehavior = random(8);
       lastBehaviorChange = elapsedSince;
-      currentBehavior++;
-      currentBehavior %= 4;
+      if(currentBehavior == 1 && currentHeartBeatGradient == &stepRedBlackGradient) {
+          currentHeartBeatGradient = &stepGreenBlackGradient;
+      }
+      else if(currentBehavior == 1) {
+          currentHeartBeatGradient = &stepRedBlackGradient;
+      }
     }
   }
 }
